@@ -1,0 +1,30 @@
+.App {
+  text-align: center;
+  margin: 20px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th,
+td {
+  border: 1px solid #ddd;
+  /* padding: 8px; */
+}
+
+input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+input {
+  /* width: calc(100% - 16px); */
+  height: 100%;
+  box-sizing: border-box;
+  border: none;
+  outline: none;
+  font-size: inherit;
+  /* padding: 8px; */
+}

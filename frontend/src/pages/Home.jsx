@@ -1,37 +1,51 @@
 import React, { useState, useEffect } from "react";
-import useWebSocket, { ReadyState } from "react-use-websocket";
-import "../styles/home.css";
 import { DataGrid } from "@mui/x-data-grid";
-import { useGridApiContext } from "@mui/x-data-grid";
+import CustomEditComponent from "../components/customEditComponent.jsx";
+import useCustomWebSocket from "../hooks/useWebSocket";
+import "../styles/home.css";
+
+const socketUrl = "ws://localhost:5000/ws";
 
 const Home = () => {
-  const [gridData, setGridData] = useState([]);
+  const [grid1Data, setGrid1Data] = useState([]);
+  const [grid2Data, setGrid2Data] = useState([]);
+  const [columns, setColumns] = useState([]);
 
-  const socketUrl = "ws://localhost:5000/ws";
-  const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl);
-
-  useEffect(() => {
-    // Send a request for initial data when the component mounts
-    sendMessage(JSON.stringify({ type: "REQUEST_INITIAL_DATA" }));
-  }, []);
-
-  useEffect(() => {
-    if (lastMessage && lastMessage.data) {
+  const handleWebSocketMessage = (message) => {
+    if (message) {
       try {
-        const message = JSON.parse(lastMessage.data);
         if (message.type === "INITIAL_DATA") {
-          setGridData(message.data);
+          const initialData = message.data;
+          setGrid1Data(initialData);
+          setGrid2Data(initialData);
+          const firstDataRow = initialData[0] || {};
+          const newColumns = Object.keys(firstDataRow).map((field) => ({
+            field,
+            headerName: field.toUpperCase(),
+            editable: field !== "id",
+            renderEditCell: (params) => (
+              <CustomEditComponent handleCellChange={handleCellChange} {...params} />
+            ),
+          }));
+          setColumns(newColumns);
         } else if (message.type === "UPDATE_CELL") {
           const { rowIndex, colIndex, value } = message;
-          const updatedData = [...gridData];
+          const updatedData = grid1Data.map((row) => ({ ...row }));
           updatedData[rowIndex][colIndex] = value;
-          setGridData(updatedData);
+          setGrid1Data(updatedData);
+          setGrid2Data(updatedData); // Reflect the change in the second grid as well
         }
       } catch (error) {
         console.error("Error parsing WebSocket message:", error);
       }
     }
-  }, [lastMessage]);
+  };
+
+  const { sendMessage } = useCustomWebSocket(socketUrl, handleWebSocketMessage);
+
+  useEffect(() => {
+    sendMessage(JSON.stringify({ type: "REQUEST_INITIAL_DATA" }));
+  }, []);
 
   const handleCellChange = (rowIndex, colIndex, value) => {
     const updateRow = {
@@ -43,75 +57,26 @@ const Home = () => {
     sendMessage(JSON.stringify(updateRow));
   };
 
-  const CustomEditComponent = (props) => {
-    const { id, value, field, hasFocus } = props;
-    const apiRef = useGridApiContext();
-    const ref = React.useRef();
-
-    React.useLayoutEffect(() => {
-      if (hasFocus) {
-        ref.current.focus();
-      }
-    }, [hasFocus]);
-
-    const handleValueChange = (event) => {
-      const newValue = event.target.value;
-      const { id: rowIndex, colDef } = apiRef.current.getCellParams(id, field);
-      handleCellChange(rowIndex - 1, colDef.field, newValue);
-      // const newValue = event.target.value; // The new value entered by the user
-      apiRef.current.setEditCellValue({ id, field, value: newValue });
-    };
-
-    return <input ref={ref} type="text" value={value} onChange={handleValueChange} />;
-  };
-
-  const columns = [
-    {
-      field: "id",
-      headerName: "ID",
-      editable: true,
-    },
-    {
-      field: "column1",
-      headerName: "Column 1",
-      editable: true,
-      renderEditCell: (params) => <CustomEditComponent {...params} />,
-    },
-    {
-      field: "column2",
-      headerName: "Column 2",
-      editable: true,
-      renderEditCell: (params) => <CustomEditComponent {...params} />,
-    },
-    {
-      field: "column3",
-      headerName: "Column 3",
-      editable: true,
-      renderEditCell: (params) => <CustomEditComponent {...params} />,
-    },
-    {
-      field: "column4",
-      headerName: "Column 4",
-      editable: true,
-      renderEditCell: (params) => <CustomEditComponent {...params} />,
-    },
-    {
-      field: "column5",
-      headerName: "Column 5",
-      editable: true,
-      renderEditCell: (params) => <CustomEditComponent {...params} />,
-    },
-  ];
-
   return (
-    <div style={{ height: 400, width: "100%" }}>
-      <DataGrid
-        rows={gridData}
-        columns={columns}
-        // checkboxSelection
-        // disableSelectionOnClick
-        editable
-      />
+    <div style={{ display: "flex" }}>
+      <div style={{ height: 371, width: "100%", marginRight: "4px" }}>
+        <h2>Data Grid 1</h2>
+        <DataGrid
+          rows={grid1Data}
+          columns={columns}
+          showColumnVerticalBorder
+          showCellVerticalBorder
+        />
+      </div>
+      <div style={{ height: 371, width: "100%" }}>
+        <h2>Data Grid 2</h2>
+        <DataGrid
+          rows={grid2Data}
+          columns={columns}
+          showColumnVerticalBorder
+          showCellVerticalBorder
+        />
+      </div>
     </div>
   );
 };

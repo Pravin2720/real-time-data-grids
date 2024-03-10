@@ -34,9 +34,10 @@ class WebSocketHandler:
                     )
         except json.JSONDecodeError as e:
             print(f"Error decoding JSON: {e}")
-        finally:
-            # Clients are not removed from the set to maintain shared state
-            pass
+        except ValueError as e:
+            print(f"Error handling WebSocket message: {e}")
+        except Exception as e:
+            print(f"Unexpected error: {e}")
 
     async def broadcast_message(self, message):
         for client in self.connected_clients:

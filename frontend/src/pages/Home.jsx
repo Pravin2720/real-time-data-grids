@@ -4,7 +4,7 @@ import CustomEditComponent from "../components/customEditComponent.jsx";
 import useCustomWebSocket from "../hooks/useWebSocket";
 import "../styles/home.css";
 
-const socketUrl = "ws://localhost:5000/ws";
+const socketUrl = "ws://127.0.0.1:5000/ws";
 
 const Home = () => {
   const [grid1Data, setGrid1Data] = useState([]);
